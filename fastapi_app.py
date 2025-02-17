@@ -6,7 +6,7 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Load model and encoders
+
 model = joblib.load("models/best_model.pkl")
 encoders = joblib.load("models/encoders.pkl")
 
@@ -21,7 +21,7 @@ class FlightData(BaseModel):
     Total_Stops: int
     Additional_Info: str
 
-# Fix: Add a root endpoint to avoid "Not Found" on "/"
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to the Flight Price Prediction API"}

@@ -15,7 +15,6 @@ def init():
 
 def run(raw_data):
     data = pd.read_json(raw_data)
-    # Preprocess data here according to your trained pipeline
     prediction = model.predict(data)[0]
     output_dc.collect(data)
     return {"predicted_price": float(prediction)}
