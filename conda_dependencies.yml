@@ -1,0 +1,12 @@
+name: flight_env
+dependencies:
+  - python=3.9
+  - pip:
+    - numpy
+    - pandas
+    - scikit-learn
+    - joblib
+    - fastapi
+    - uvicorn
+    - streamlit-folium
+    - python-multipart
