@@ -1,39 +1,106 @@
-# Flight-Airfare-Prediction-on-Azure-with-WebUI
+# Flight-Airfare-Prediction-on-Azure-with-WebUI ✈️
 
-## Overview
+<div style="display: flex; gap: 10px;">
+  
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+  </a>
+  <a href="https://fastapi.tiangolo.com/">
+    <img src="https://img.shields.io/badge/-FastAPI-009485?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
+  </a>
+    <a href="https://joblib.readthedocs.io/">
+    <img src="https://img.shields.io/badge/-joblib-FF9900?style=flat-square&logo=python&logoColor=white" alt="Joblib">
+  </a>
+  <a href="https://streamlit.io/">
+    <img src="https://img.shields.io/badge/-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit">
+  </a>
+  <a href="https://www.docker.com/">
+    <img src="https://img.shields.io/badge/-Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
+  </a>
+  <a href="https://azure.microsoft.com/">
+    <img src="https://img.shields.io/badge/-Azure-0078D4?style=flat-square&logo=microsoft-azure&logoColor=white" alt="Azure">
+  </a>
+  <a href="https://scikit-learn.org/">
+    <img src="https://img.shields.io/badge/-scikit--learn-F7931E?style=flat-square&logo=scikit-learn&logoColor=white" alt="Scikit‑Learn">
+  </a>
+</div>
 
-This project is an end‑to‑end solution that predicts flight airfares using machine learning and serves the predictions via a modern web interface. The system includes data exploration, feature engineering, multiple model building, and deployment. A REST API built with FastAPI exposes prediction endpoints, while a Streamlit web application provides an interactive user interface. The entire solution is containerized using Docker and deployed on Azure (using Azure ML, Container Registry, and Web Apps).
+---
 
-## Features
+**Flight-Airfare-Prediction-on-Azure-with-WebUI** is an end‑to‑end solution that predicts flight airfares using machine learning while offering an interactive web interface. The system includes advanced data exploration and feature engineering, multiple model building, and REST API endpoints via FastAPI. An intuitive Streamlit application allows users to input flight details and view predictions in real time. The entire solution is containerized with Docker and deployed on Azure for scalable, production‑grade operations.
 
-- **Data Exploration & Model Building:**  
-  - Extensive exploratory data analysis and feature engineering performed in Jupyter notebooks.
-  - Multiple machine learning models developed and compared with the best model saved as `best_model.pkl` along with associated encoders in `encoders.pkl`.
+## Technology Stack
 
-- **REST API for Predictions:**  
-  - FastAPI exposes endpoints (e.g., `/predict`) for real-time flight fare predictions.
-  - Uses a robust data pre‑processing pipeline and model inference to return predictions in sub‑500 ms.
+- **Frontend & Visualization:**  
+  Streamlit, Altair, PyDeck, Folium
 
-- **Interactive Web Interface:**  
-  - Streamlit-based UI (`app.py`) allows users to enter flight details, view prediction results, and visualize flight routes on maps and interactive charts.
-  - Calendar view for flight fare trends over a period with interactive Altair charts.
+- **API & Backend:**  
+  FastAPI, Python (joblib, Pandas)
 
-- **Containerization & Cloud Deployment:**  
-  - Dockerfile defines the container image to run FastAPI (and optionally the Streamlit app).
-  - Deployed to Azure using Azure Container Registry, Azure Machine Learning for model management, and Azure Web Apps for serving the Docker container 24/7.
+- **Machine Learning:**  
+  Feature engineering and modeling in Jupyter Notebooks, model serialization with joblib
 
-## Prerequisites
+- **Containerization & Deployment:**  
+  Docker, Azure Container Registry, Azure Machine Learning, Azure Web Apps
 
-- Python 3.9+
-- Docker
-- Azure CLI
-- An active Azure Subscription with access to Azure Machine Learning, Container Registries, and Web Apps.
-- Required Python packages as listed in `requirements.txt` & `conda_dependencies.yml`.
+## 🌟 Features
 
-## Installation & Setup
+- **End-to-End ML Pipeline:**  
+  - Performed comprehensive EDA and feature engineering to prepare flight data.  
+  - Developed, validated, and selected multiple predictive models with high accuracy.
 
-1. **Clone the Repository**
+- **Real-Time Predictions via REST API:**  
+  - Deployed a FastAPI service exposing endpoints (e.g., `/predict`) for sub‑500 ms response times.
+  - Implements robust data pre‑processing and encoding for dynamic flight predictions.
+
+- **Interactive User Interface:**  
+  - Streamlit web app enables users to input flight details, view predictions, and explore dynamic visualizations such as calendar charts and 3D route maps.
+  - Integrated interactive charts using Altair and spatial visualizations with Folium.
+
+- **Cloud-Ready Deployment:**  
+  - Containerized the application using Docker for consistency and scalability.  
+  - Deployed on Azure using Azure Container Registry, Azure ML for model management, and Azure Web Apps for global availability 24/7.
+
+## 🛠️ Installation
+
+1. **Clone the Repository:**
 
    ```bash
    git clone https://github.com/realshubhamraut/Flight-Airfare-Prediction-on-Azure-with-WebUI
    cd Flight-Airfare-Prediction-on-Azure-with-WebUI
+
+2. **Install Dependencies:**
+
+- For local environment using pip:
+  ```sh
+  pip install -r requirements.txt
+(Alternatively) Create a Conda environment using conda_dependencies.yml.
+
+
+**Configure Azure Resources:**
+
+- Download your Azure ML workspace configuration file (e.g., config.json) and place it in the project root.
+
+- Ensure you have access to an Azure Subscription with resources like Container Registries, ML Workspaces, and Web Apps.
+
+
+####  **Build & Push the Docker Image:**
+```
+docker build -t flight-fastapi-app .
+docker tag flight-fastapi-app <ACR_LOGIN_SERVER>/flight-fastapi-app:latest
+docker push <ACR_LOGIN_SERVER>/flight-fastapi-app:latest
+```
+
+Run the Local Web App:
+
+_To run the FastAPI service:_
+
+```
+uvicorn fastapi_app:app --reload
+```
+Finally to launch the streamlit interface
+
+
+```
+streamlit run app.py
+```
