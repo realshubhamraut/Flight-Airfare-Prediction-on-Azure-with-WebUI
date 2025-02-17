@@ -35,5 +35,5 @@ This project is an end‑to‑end solution that predicts flight airfares using m
 1. **Clone the Repository**
 
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/realshubhamraut/Flight-Airfare-Prediction-on-Azure-with-WebUI
    cd Flight-Airfare-Prediction-on-Azure-with-WebUI
