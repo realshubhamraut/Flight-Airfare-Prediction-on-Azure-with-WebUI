@@ -1,0 +1,472 @@
+# %%
+# ### Libraries
+
+# %%
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import joblib
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+
+# %%
+from sklearn.linear_model import LinearRegression
+# Lasso
+from sklearn.linear_model import Lasso
+from sklearn.feature_selection import SelectFromModel
+from sklearn.ensemble import ExtraTreesRegressor
+# Ridge
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import GridSearchCV
+# DecisionTree
+from sklearn.tree import DecisionTreeRegressor
+from sklearn import tree
+# RandomForestRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import RandomizedSearchCV
+import warnings
+warnings.filterwarnings("ignore")
+
+# %%
+# # Explore DataSets
+
+# %%
+df1 = pd.read_csv("data/train.csv")
+# Size Of Dataset
+df1.shape
+
+# %%
+df1.head(5)
+
+# %%
+df1.tail()
+
+# %%
+# **Missing Values**
+
+# %%
+df1.isnull().sum()
+
+# %%
+df1.info()
+
+# %%
+df1.describe()
+
+# %%
+# ### Data Analysis And Visualization on train.csv
+
+# %%
+df1["Airline"].unique()
+
+# %%
+for i in df1:
+    print(f"Number of unique {i}s -->> {df1[i].nunique()}")
+
+# %%
+for i in df1:
+    print(df1[i].value_counts())
+
+# %%
+sns.countplot(x="Airline", data=df1)
+
+plt.title("Airline Distribution", fontweight="bold")
+plt.xlabel("Airline")
+plt.ylabel("Count")
+
+plt.xticks(rotation=45)
+plt.show()
+
+# %%
+sns.countplot(x="Source", data=df1, color="skyblue")
+
+plt.title("Source Distribution", fontweight="bold")
+plt.xlabel("Count")
+plt.ylabel("Source")
+plt.xticks(rotation=45)
+
+plt.show()
+
+# %%
+sns.countplot(x=df1["Destination"], color="orange", alpha=0.5)
+
+plt.title("Destination Distribution", fontweight="bold")
+plt.xlabel("Count")
+plt.ylabel("Destination")
+plt.xticks(rotation=45)
+plt.show()
+
+# %%
+top_routes = df1["Route"].value_counts().sort_values(ascending=False)[:10]
+top_routes
+
+# %%
+top_routes.plot(kind="bar", color="y", alpha=0.5)
+
+plt.title("Top 10 Used Routes", fontweight="bold")
+plt.ylabel("Count")
+
+plt.show()
+
+# %%
+# Less used routes
+bottom_routes = df1["Route"].value_counts().sort_values(ascending=True)[:10]
+bottom_routes
+
+# %%
+df1["Total_Stops"].value_counts()
+
+# %%
+sns.countplot(x=df1["Total_Stops"], color="brown", alpha=0.6)
+plt.show()
+
+# %%
+sns.histplot(x=df1["Price"], kde=True, color="black")
+
+plt.show()
+
+# %%
+sns.catplot(x="Airline", y="Price", data=df1.sort_values("Price", ascending=False), kind="boxen", height=6, aspect=3)
+
+plt.xticks(rotation=90)
+
+plt.show()
+
+# %%
+sns.catplot(x="Source", y="Price", data=df1.sort_values("Price", ascending=False), kind="boxen", color="black", height=6, aspect=3)
+
+plt.show()
+
+# %%
+sns.catplot(x="Destination", y="Price", data=df1.sort_values("Price", ascending=False), hue="Total_Stops", aspect=3)
+
+plt.title("Destination with Price", fontweight="bold")
+
+plt.show()
+
+# %%
+# Most priced routes
+top_1000 = df1.sort_values("Price", ascending=False).head(1000)
+
+plt.figure(figsize=(18, 10))
+plt.bar(top_1000["Route"], top_1000["Price"])
+
+plt.title("Destination with Price", fontweight="bold")
+plt.xlabel("Route")
+plt.ylabel("Price")
+
+plt.xticks(rotation=90)
+
+plt.show()
+
+# %%
+# ---
+
+# %%
+# ## Feature Engineering
+
+# %%
+df1.info()
+
+# %%
+df1["Date_of_Journey"].unique()
+
+# %%
+# Create three features from "Date_of_Journey" and drop it
+df1["Date"] = df1["Date_of_Journey"].str.split("/").str[0]
+df1["Month"] = df1["Date_of_Journey"].str.split("/").str[1]
+df1["Year"] = df1["Date_of_Journey"].str.split("/").str[2]
+
+df1.drop("Date_of_Journey", inplace=True, axis=1)
+
+df1["Date"] = df1["Date"].astype(int)
+df1["Month"] = df1["Month"].astype(int)
+df1["Year"] = df1["Year"].astype(int)
+
+# %%
+# Handle "Total_Stops"
+df1["Total_Stops"].unique()
+
+# %%
+df1["Total_Stops"].replace(np.nan, "1 stop", inplace=True)
+df1["Stops"] = df1["Total_Stops"].replace("non-stop", "1 stop")
+df1["Stops"] = df1["Stops"].str.split(" ").str[0]
+df1["Stops"] = df1["Stops"].astype(int)
+df1.drop("Total_Stops", axis=1, inplace=True)
+
+# %%
+df1.head(4)
+
+# %%
+df1["Arrival_Time"].unique()
+
+# %%
+# Remove date from "Arrival_Time"
+df1["Arrival_Time"] = df1["Arrival_Time"].str.split(" ").str[0]
+
+# %%
+# Create "Arrival_hour" and "Arrival_min"
+df1["Arrival_hour"] = df1["Arrival_Time"].str.split(":").str[0]
+df1["Arrival_min"] = df1["Arrival_Time"].str.split(":").str[1]
+df1.drop("Arrival_Time", axis=1, inplace=True)
+
+# %%
+df1["Arrival_hour"] = df1["Arrival_hour"].astype(int)
+df1["Arrival_min"] = df1["Arrival_min"].astype(int)
+
+# %%
+df1.head(4)
+
+# %%
+df1["Dep_Time"].unique()
+
+# %%
+# Create "Dep_hour" and "Dep_min"
+df1["Dep_hour"] = df1["Dep_Time"].str.split(":").str[0]
+df1["Dep_min"] = df1["Dep_Time"].str.split(":").str[1]
+df1.drop("Dep_Time", axis=1, inplace=True)
+df1["Dep_hour"] = df1["Dep_hour"].astype(int)
+df1["Dep_min"] = df1["Dep_min"].astype(int)
+
+# %%
+df1.head(4)
+
+# %%
+df1["Additional_Info"].unique()
+
+# %%
+df1["Additional_Info"] = df1["Additional_Info"].replace("No Info", "No info")
+
+# %%
+print(df1.columns)
+
+# %%
+df1["Duration"].unique()
+
+# %%
+# Create "Duration_hour" and "Duration_min"
+df1["Duration_hour"] = df1["Duration"].str.split(" ").str[0]
+df1["Duration_hour"] = df1["Duration_hour"].str.split("h").str[0]
+
+df1["Duration_min"] = df1["Duration"].str.split(" ").str[1]
+df1["Duration_min"] = df1["Duration_min"].str.split("m").str[0]
+
+df1.drop("Duration", axis=1, inplace=True)
+
+# %%
+df1["Duration_min"].unique()
+
+# %%
+df1["Duration_hour"].unique()
+
+# %%
+df1["Duration_min"] = df1["Duration_min"].replace(np.nan, "0")
+df1["Duration_hour"] = df1["Duration_hour"].replace("5m", "5")
+
+# Convert to int
+df1["Duration_min"] = df1["Duration_min"].astype(int)
+df1["Duration_hour"] = df1["Duration_hour"].astype(int)
+
+# %%
+df1["Route"].unique()
+
+# %%
+# Split "Route" into multiple columns
+df1["Route_1"] = df1["Route"].str.split(" → ").str[0]
+df1["Route_2"] = df1["Route"].str.split(" → ").str[1]
+df1["Route_3"] = df1["Route"].str.split(" → ").str[2]
+df1["Route_4"] = df1["Route"].str.split(" → ").str[3]
+df1["Route_5"] = df1["Route"].str.split(" → ").str[4]
+
+df1["Route_1"].fillna("None", inplace=True)
+df1["Route_2"].fillna("None", inplace=True)
+df1["Route_3"].fillna("None", inplace=True)
+df1["Route_4"].fillna("None", inplace=True)
+df1["Route_5"].fillna("None", inplace=True)
+
+df1.drop("Route", axis=1, inplace=True)
+
+# %%
+df1.head(5)
+
+# %%
+df1.info()
+
+# %%
+df1.isnull().sum()
+
+# %%
+# No Null value in dataset
+
+# %%
+df1.head(5)
+
+# %%
+# Remove Year column because this data is from the same year
+
+# %%
+df1.drop("Year", axis=1, inplace=True)
+
+# %%
+# ---
+
+# %%
+# ### Model Training
+
+# %%
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import joblib
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+
+# Lasso
+from sklearn.linear_model import Lasso
+from sklearn.feature_selection import SelectFromModel
+# ExtraTrees
+from sklearn.ensemble import ExtraTreesRegressor
+# DecisionTree
+from sklearn.tree import DecisionTreeRegressor
+# RandomForest, GradientBoosting, etc.
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.svm import SVR
+from sklearn.svm import SVC
+import warnings
+warnings.filterwarnings("ignore")
+
+# -----------------------------------------------
+# Example EDA or other steps above, if needed
+# -----------------------------------------------
+
+# Load the dataset
+df = pd.read_csv("data/train.csv")
+
+# Drop the Route column entirely
+df = df.drop(columns=["Route"], errors="ignore")
+
+# Split into features (x) and target (y)
+x = df.drop("Price", axis=1)
+y = df["Price"]
+
+# Encode categorical features
+encoders = {}
+for col in x.columns:
+    if x[col].dtype == "object":
+        encoder = LabelEncoder()
+        x[col] = encoder.fit_transform(x[col])
+        encoders[col] = encoder
+
+# Save encoders for future use
+joblib.dump(encoders, "models/encoders.pkl")
+print("Encoders saved successfully (Route excluded)!")
+
+# Split data into train and test sets
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.30, random_state=42)
+
+# Also save the test data if needed
+joblib.dump(x_test, "models/x_test.pkl")
+joblib.dump(y_test, "models/y_test.pkl")
+
+print(f"Shape of x_train: {x_train.shape}")
+print(f"Shape of x_test: {x_test.shape}")
+print(f"Shape of y_train: {y_train.shape}")
+print(f"Shape of y_test: {y_test.shape}")
+
+# ---------------------------------------------------
+# Lasso for feature importance
+# ---------------------------------------------------
+model_Lasso = SelectFromModel(Lasso(alpha=0.005, max_iter=500, random_state=0))
+model_Lasso.fit(x_train, y_train)
+
+print("Lasso Selected Columns:", x_train.columns[model_Lasso.get_support()])
+
+# ---------------------------------------------------
+# ExtraTreesRegressor for feature importance
+# ---------------------------------------------------
+etr = ExtraTreesRegressor()
+etr.fit(x_train, y_train)
+
+plt.style.use("ggplot")
+plt.figure(figsize=(10, 5))
+feature_imp = pd.Series(etr.feature_importances_, index=x.columns)
+feature_imp.nlargest(35).plot(kind="bar")
+plt.show()
+
+# ---------------------------------------------------
+# Decision Tree
+# ---------------------------------------------------
+model_DT = DecisionTreeRegressor()
+model_DT.fit(x_train, y_train)
+predict_DT = model_DT.predict(x_test)
+scoreDT = r2_score(predict_DT, y_test)
+print("Decision Tree R2 Score:", scoreDT)
+print("MSE -->", mean_squared_error(predict_DT, y_test))
+print("MAE -->", mean_absolute_error(predict_DT, y_test))
+print("RMSE -->", np.sqrt(mean_squared_error(predict_DT, y_test)))
+
+# ---------------------------------------------------
+# SVC (for demonstration, though it's usually for classification)
+# ---------------------------------------------------
+svc_model = SVC()
+svc_model.fit(x_train, y_train)
+pred_svc = svc_model.predict(x_test)
+print("SVC MSE:", mean_squared_error(pred_svc, y_test))
+print("SVC MAE:", mean_absolute_error(pred_svc, y_test))
+print("SVC RMSE:", np.sqrt(mean_absolute_error(pred_svc, y_test)))
+print("SVC R2 Score:", r2_score(pred_svc, y_test))
+
+# ---------------------------------------------------
+# GradientBoostingRegressor
+# ---------------------------------------------------
+gbr_model = GradientBoostingRegressor()
+gbr_model.fit(x_train, y_train)
+gbr_pred = gbr_model.predict(x_test)
+print("GBR MSE:", mean_squared_error(gbr_pred, y_test))
+print("GBR MAE:", mean_absolute_error(gbr_pred, y_test))
+print("GBR RMSE:", np.sqrt(mean_absolute_error(gbr_pred, y_test)))
+print("GBR R2 Score:", r2_score(gbr_pred, y_test))
+
+# ---------------------------------------------------
+# Compare Models
+# ---------------------------------------------------
+def evaluate_model(model, x_train, y_train, x_test, y_test):
+    model.fit(x_train, y_train)
+    predictions = model.predict(x_test)
+    r2 = r2_score(y_test, predictions)
+    mae = mean_absolute_error(y_test, predictions)
+    mse = mean_squared_error(y_test, predictions)
+    rmse = np.sqrt(mse)
+    return r2, mae, mse, rmse
+
+models = {
+    "RandomForest": RandomForestRegressor(n_estimators=100, random_state=42),
+    "GradientBoosting": GradientBoostingRegressor(random_state=42),
+    "DecisionTree": DecisionTreeRegressor(random_state=42),
+    "SVR": SVR()
+}
+
+results = {}
+for name, mdl in models.items():
+    r2, mae, mse, rmse = evaluate_model(mdl, x_train, y_train, x_test, y_test)
+    results[name] = {"R2": r2, "MAE": mae, "MSE": mse, "RMSE": rmse}
+
+results_df = pd.DataFrame.from_dict(results, orient='index')
+print("\nModel Comparison:")
+print(results_df)
+
+# ---------------------------------------------------
+# Select & Save the Best Model
+# ---------------------------------------------------
+best_model_name = max(results, key=lambda name: results[name]["R2"])
+best_model = models[best_model_name]
+best_model.fit(x_train, y_train)
+joblib.dump(best_model, "models/best_model.pkl")
+
+print(f"\nThe best model is {best_model_name} and it has been saved as 'best_model.pkl'")
