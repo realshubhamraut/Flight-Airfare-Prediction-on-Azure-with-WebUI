@@ -7,7 +7,6 @@ from streamlit_folium import st_folium
 import altair as alt
 import pydeck as pdk
 
-# Load the best model and encoders saved during training
 model = joblib.load("models/best_model.pkl")
 encoders = joblib.load("models/encoders.pkl")
 
@@ -28,65 +27,69 @@ city_coords = {
 with st.sidebar:
     st.header("Flight Inputs")
 
-    airlines = st.multiselect("Airline(s)", encoders["Airline"].classes_, default=[encoders["Airline"].classes_[0]])
+    airlines = st.multiselect(
+        "Airline(s)",
+        encoders["Airline"].classes_,
+        default=[encoders["Airline"].classes_[0]]
+    )
     source = st.selectbox("Source", encoders["Source"].classes_)
     destination = st.selectbox("Destination", encoders["Destination"].classes_)
     journey_date = st.date_input("Date of Journey", datetime.today())
 
-    # In the web UI, only allow the three options for Additional_Info.
     additional_info = st.selectbox("Additional Info", ["No check-in baggage included", "Red-eye flight", "No Info"])
     
     st.header("Calendar Predictions")
     start_date = st.date_input("Start Date", journey_date)
     end_date = st.date_input("End Date", journey_date)
+    
+    predict_click = st.button("Predict Price")
+
+COLUMN_ORDER = [
+    "Airline",
+    "Source",
+    "Destination",
+    "Additional_Info",
+    "Date",
+    "Month",
+    "Year", 
+    "Duration_hour",
+    "Duration_min",
+]
+
+def preprocess_inputs(use_date, use_month, use_year, airline_val):
+    dur_hour = 0
+    dur_min = 0
+
+
+    input_data = {
+        "Airline": encoders["Airline"].transform([airline_val])[0],
+        "Source": encoders["Source"].transform([source])[0],
+        "Destination": encoders["Destination"].transform([destination])[0],
+        "Additional_Info": encoders["Additional_Info"].transform([additional_info])[0],
+        "Date": use_date,
+        "Month": use_month,
+        "Year": use_year,
+        "Duration_hour": dur_hour,
+        "Duration_min": dur_min,
+    }
+    df_input = pd.DataFrame([input_data])
+    df_input = df_input[COLUMN_ORDER]
+    return df_input
 
 # --- Main Panel ---
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Price Prediction")
-    COLUMN_ORDER = [
-        "Airline",
-        "Source",
-        "Destination",
-        "Additional_Info",
-        "Date",
-        "Month",
-        "Year", 
-        "Duration_hour",
-        "Duration_min",
-    ]
-
-    def preprocess_inputs(use_date, use_month, use_year, airline_val):
-        # Default durations set to 0 as they aren't used in the web UI.
-        dur_hour = 0
-        dur_min = 0
-
-        # Note: Although the model was trained on the full spectrum of Additional_Info,
-        # here we supply only one of the allowed three options.
-        input_data = {
-            "Airline": encoders["Airline"].transform([airline_val])[0],
-            "Source": encoders["Source"].transform([source])[0],
-            "Destination": encoders["Destination"].transform([destination])[0],
-            "Additional_Info": encoders["Additional_Info"].transform([additional_info])[0],
-            "Date": use_date,
-            "Month": use_month,
-            "Year": use_year,
-            "Duration_hour": dur_hour,
-            "Duration_min": dur_min,
-        }
-        df_input = pd.DataFrame([input_data])
-        df_input = df_input[COLUMN_ORDER]
-        return df_input
-
-    if st.button("Predict Price"):
+    st.subheader("Price Prediction & Calendar")
+    
+    if predict_click:
         results = []
         for airline_val in airlines:
             single_input = preprocess_inputs(journey_date.day, journey_date.month, journey_date.year, airline_val)
             prediction = model.predict(single_input)[0]
             results.append({"Airline": airline_val, "Predicted Price": f"₹{prediction:.2f}"})
         st.write(pd.DataFrame(results))
-
+    
     if start_date <= end_date:
         all_data = []
         dates = pd.date_range(start_date, end_date)
