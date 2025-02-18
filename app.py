@@ -7,7 +7,7 @@ from streamlit_folium import st_folium
 import altair as alt
 import pydeck as pdk
 
-
+# Load the best model and encoders saved during training
 model = joblib.load("models/best_model.pkl")
 encoders = joblib.load("models/encoders.pkl")
 
@@ -22,7 +22,6 @@ city_coords = {
     "Kolkata": [22.5726, 88.3639],
     "Banglore": [12.9716, 77.5946],
     "Hyderabad": [17.3850, 78.4867],
-
 }
 
 # --- Sidebar for Inputs ---
@@ -34,11 +33,8 @@ with st.sidebar:
     destination = st.selectbox("Destination", encoders["Destination"].classes_)
     journey_date = st.date_input("Date of Journey", datetime.today())
 
-
-    arrival_time = st.time_input("Arrival Time", datetime.now().time())
-    duration = "" 
-    stops = st.selectbox("Total Stops", [0, 1, 2, 3, 4])
-    additional_info = st.selectbox("Additional Info", encoders["Additional_Info"].classes_)
+    # In the web UI, only allow the three options for Additional_Info.
+    additional_info = st.selectbox("Additional Info", ["No check-in baggage included", "Red-eye flight", "No Info"])
     
     st.header("Calendar Predictions")
     start_date = st.date_input("Start Date", journey_date)
@@ -57,20 +53,17 @@ with col1:
         "Date",
         "Month",
         "Year", 
-        "Total_Stops",
-        "Arrival_hour",
-        "Arrival_min",
         "Duration_hour",
         "Duration_min",
     ]
 
     def preprocess_inputs(use_date, use_month, use_year, airline_val):
-        arrival_hour = arrival_time.hour
-        arrival_min = arrival_time.minute
-
+        # Default durations set to 0 as they aren't used in the web UI.
         dur_hour = 0
         dur_min = 0
 
+        # Note: Although the model was trained on the full spectrum of Additional_Info,
+        # here we supply only one of the allowed three options.
         input_data = {
             "Airline": encoders["Airline"].transform([airline_val])[0],
             "Source": encoders["Source"].transform([source])[0],
@@ -78,17 +71,13 @@ with col1:
             "Additional_Info": encoders["Additional_Info"].transform([additional_info])[0],
             "Date": use_date,
             "Month": use_month,
-            "Year": use_year, 
-            "Total_Stops": stops,
-            "Arrival_hour": arrival_hour,
-            "Arrival_min": arrival_min,
+            "Year": use_year,
             "Duration_hour": dur_hour,
             "Duration_min": dur_min,
         }
-
-        df = pd.DataFrame([input_data])
-        df = df[COLUMN_ORDER]
-        return df
+        df_input = pd.DataFrame([input_data])
+        df_input = df_input[COLUMN_ORDER]
+        return df_input
 
     if st.button("Predict Price"):
         results = []
@@ -129,7 +118,6 @@ with col2:
         dst_coords = city_coords[destination]
         mid_lat = (src_coords[0] + dst_coords[0]) / 2
         mid_lon = (src_coords[1] + dst_coords[1]) / 2
-        # Prepare data for the ArcLayer
         arc_data = pd.DataFrame({
             "start_lon": [src_coords[1]],
             "start_lat": [src_coords[0]],
@@ -137,7 +125,7 @@ with col2:
             "end_lat": [dst_coords[0]]
         })
         deck = pdk.Deck(
-            map_style="mapbox://styles/mapbox/light-v10",  
+            map_style="mapbox://styles/mapbox/light-v10",
             initial_view_state=pdk.ViewState(
                 latitude=mid_lat,
                 longitude=mid_lon,

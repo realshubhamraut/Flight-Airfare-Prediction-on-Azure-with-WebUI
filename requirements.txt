@@ -10,3 +10,5 @@ streamlit-folium
 python-multipart
 azureml-core
 azureml-contrib-services
+statsmodels
+torch
