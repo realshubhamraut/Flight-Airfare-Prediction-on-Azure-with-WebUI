@@ -7,6 +7,7 @@ from streamlit_folium import st_folium
 import altair as alt
 import pydeck as pdk
 
+# Load model and encoders
 model = joblib.load("models/best_model.pkl")
 encoders = joblib.load("models/encoders.pkl")
 
@@ -23,10 +24,9 @@ city_coords = {
     "Hyderabad": [17.3850, 78.4867],
 }
 
-# --- Sidebar for Inputs ---
+# --- Sidebar for Inputs (only show key fields) ---
 with st.sidebar:
     st.header("Flight Inputs")
-
     airlines = st.multiselect(
         "Airline(s)",
         encoders["Airline"].classes_,
@@ -35,8 +35,13 @@ with st.sidebar:
     source = st.selectbox("Source", encoders["Source"].classes_)
     destination = st.selectbox("Destination", encoders["Destination"].classes_)
     journey_date = st.date_input("Date of Journey", datetime.today())
-
     additional_info = st.selectbox("Additional Info", ["No check-in baggage included", "Red-eye flight", "No Info"])
+    
+    # Hidden default values for features not needed from UI
+    # These values will be used during prediction.
+    DEFAULT_TOTAL_STOPS = 0
+    DEFAULT_ARRIVAL_TIME = datetime.strptime("13:00", "%H:%M").time()
+    DEFAULT_DURATION = "3h 0m"
     
     st.header("Calendar Predictions")
     start_date = st.date_input("Start Date", journey_date)
@@ -44,6 +49,8 @@ with st.sidebar:
     
     predict_click = st.button("Predict Price")
 
+# Define column order matching features used during training.
+# Expected features: Airline, Source, Destination, Additional_Info, Date, Month, Total_Stops, Arrival_hour, Arrival_min, Duration_hour, Duration_min
 COLUMN_ORDER = [
     "Airline",
     "Source",
@@ -51,24 +58,39 @@ COLUMN_ORDER = [
     "Additional_Info",
     "Date",
     "Month",
-    "Year", 
+    "Total_Stops",
+    "Arrival_hour",
+    "Arrival_min",
     "Duration_hour",
     "Duration_min",
 ]
 
-def preprocess_inputs(use_date, use_month, use_year, airline_val):
+def parse_duration(duration_str):
+    # Expects format "3h 0m" possibly with spaces.
+    duration_str = duration_str.lower().replace(" ", "")
     dur_hour = 0
     dur_min = 0
+    if "h" in duration_str:
+        parts = duration_str.split("h")
+        dur_hour = int(parts[0])
+        if len(parts) > 1 and "m" in parts[1]:
+            dur_min = int(parts[1].replace("m", ""))
+    elif "m" in duration_str:
+        dur_min = int(duration_str.replace("m", ""))
+    return dur_hour, dur_min
 
-
+def preprocess_inputs(date_day, month, airline_val, total_stops, arrival_time, duration_str):
+    dur_hour, dur_min = parse_duration(duration_str)
     input_data = {
         "Airline": encoders["Airline"].transform([airline_val])[0],
         "Source": encoders["Source"].transform([source])[0],
         "Destination": encoders["Destination"].transform([destination])[0],
         "Additional_Info": encoders["Additional_Info"].transform([additional_info])[0],
-        "Date": use_date,
-        "Month": use_month,
-        "Year": use_year,
+        "Date": date_day,
+        "Month": month,
+        "Total_Stops": total_stops,
+        "Arrival_hour": arrival_time.hour,
+        "Arrival_min": arrival_time.minute,
         "Duration_hour": dur_hour,
         "Duration_min": dur_min,
     }
@@ -84,8 +106,16 @@ with col1:
     
     if predict_click:
         results = []
+        # Use each airline selected from the multiselect
         for airline_val in airlines:
-            single_input = preprocess_inputs(journey_date.day, journey_date.month, journey_date.year, airline_val)
+            single_input = preprocess_inputs(
+                journey_date.day, 
+                journey_date.month, 
+                airline_val,
+                DEFAULT_TOTAL_STOPS, 
+                DEFAULT_ARRIVAL_TIME, 
+                DEFAULT_DURATION
+            )
             prediction = model.predict(single_input)[0]
             results.append({"Airline": airline_val, "Predicted Price": f"₹{prediction:.2f}"})
         st.write(pd.DataFrame(results))
@@ -96,7 +126,11 @@ with col1:
         for airline_val in airlines:
             prices = []
             for d in dates:
-                input_df = preprocess_inputs(d.day, d.month, d.year, airline_val)
+                # For each date in the range, use same fixed values for the hidden features.
+                input_df = preprocess_inputs(
+                    d.day, d.month, airline_val, 
+                    DEFAULT_TOTAL_STOPS, DEFAULT_ARRIVAL_TIME, DEFAULT_DURATION
+                )
                 prices.append(model.predict(input_df)[0])
             temp_df = pd.DataFrame({"Date": dates, "Price": prices})
             temp_df["Airline"] = airline_val
