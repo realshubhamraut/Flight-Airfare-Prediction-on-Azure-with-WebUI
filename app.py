@@ -7,12 +7,49 @@ from streamlit_folium import st_folium
 import altair as alt
 import pydeck as pdk
 
+st.set_page_config(
+    page_title="Flight Price Prediction",
+    page_icon="✈️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+custom_css = """
+<style>
+    body {
+        background-color: #f9f9f9;
+    }
+    .main {
+        background-color: #f5f5f5;
+    }
+    .sidebar .sidebar-content {
+        background-image: linear-gradient(#2e7bcf, #2e7bcf);
+        color: #ffffff;
+    }
+    .stButton>button {
+        background-color: #2e7bcf;
+        color: white;
+        border-radius: 5px;
+    }
+    .header-title {
+        text-align: center;
+        margin-bottom: 0;
+    }
+    .header-tagline {
+        text-align: left; 
+        color: #555555;
+        font-size: 18px;
+        margin-top: 5px;
+    }
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+st.title("Flight Price Prediction 🛫", anchor="header-title")
+st.markdown("<p class='header-tagline'>Your Trusted Companion for Flight Fare Forecasting</p>", unsafe_allow_html=True)
+
 # Load model and encoders
 model = joblib.load("models/best_ml_model.pkl")
 encoders = joblib.load("models/saved_encoders.pkl")
-
-st.set_page_config(layout="wide")
-st.title("Flight Price Prediction 🛫")
 
 city_coords = {
     "Delhi": [28.7041, 77.1025],
@@ -24,33 +61,35 @@ city_coords = {
     "Hyderabad": [17.3850, 78.4867],
 }
 
-# --- Sidebar for Inputs (only show key fields) ---
+# --- Sidebar for Inputs (only key fields) ---
 with st.sidebar:
     st.header("Flight Inputs")
     airlines = st.multiselect(
-        "Airline(s)",
+        "Select Airline(s)",
         encoders["Airline"].classes_,
         default=[encoders["Airline"].classes_[0]]
     )
     source = st.selectbox("Source", encoders["Source"].classes_)
     destination = st.selectbox("Destination", encoders["Destination"].classes_)
     journey_date = st.date_input("Date of Journey", datetime.today())
-    additional_info = st.selectbox("Additional Info", ["No check-in baggage included", "Red-eye flight", "No Info"])
+    additional_info = st.selectbox(
+        "Additional Info",
+        ["No check-in baggage included", "Red-eye flight", "No Info"]
+    )
     
-    # Hidden default values for features not needed from UI
-    # These values will be used during prediction.
+    # Hidden default values for features not needed in UI
     DEFAULT_TOTAL_STOPS = 0
     DEFAULT_ARRIVAL_TIME = datetime.strptime("13:00", "%H:%M").time()
     DEFAULT_DURATION = "3h 0m"
     
+    st.markdown("---")
     st.header("Calendar Predictions")
     start_date = st.date_input("Start Date", journey_date)
     end_date = st.date_input("End Date", journey_date)
     
     predict_click = st.button("Predict Price")
 
-# Define column order matching features used during training.
-# Expected features: Airline, Source, Destination, Additional_Info, Date, Month, Total_Stops, Arrival_hour, Arrival_min, Duration_hour, Duration_min
+# defined column order matching features used during training.
 COLUMN_ORDER = [
     "Airline",
     "Source",
@@ -66,7 +105,6 @@ COLUMN_ORDER = [
 ]
 
 def parse_duration(duration_str):
-    # Expects format "3h 0m" possibly with spaces.
     duration_str = duration_str.lower().replace(" ", "")
     dur_hour = 0
     dur_min = 0
@@ -106,18 +144,20 @@ with col1:
     
     if predict_click:
         results = []
-        # Use each airline selected from the multiselect
         for airline_val in airlines:
             single_input = preprocess_inputs(
-                journey_date.day, 
-                journey_date.month, 
+                journey_date.day,
+                journey_date.month,
                 airline_val,
-                DEFAULT_TOTAL_STOPS, 
-                DEFAULT_ARRIVAL_TIME, 
+                DEFAULT_TOTAL_STOPS,
+                DEFAULT_ARRIVAL_TIME,
                 DEFAULT_DURATION
             )
             prediction = model.predict(single_input)[0]
-            results.append({"Airline": airline_val, "Predicted Price": f"₹{prediction:.2f}"})
+            results.append({
+                "Airline": airline_val,
+                "Predicted Price": f"₹{prediction:.2f}"
+            })
         st.write(pd.DataFrame(results))
     
     if start_date <= end_date:
@@ -126,10 +166,11 @@ with col1:
         for airline_val in airlines:
             prices = []
             for d in dates:
-                # For each date in the range, use same fixed values for the hidden features.
                 input_df = preprocess_inputs(
-                    d.day, d.month, airline_val, 
-                    DEFAULT_TOTAL_STOPS, DEFAULT_ARRIVAL_TIME, DEFAULT_DURATION
+                    d.day, d.month, airline_val,
+                    DEFAULT_TOTAL_STOPS,
+                    DEFAULT_ARRIVAL_TIME,
+                    DEFAULT_DURATION
                 )
                 prices.append(model.predict(input_df)[0])
             temp_df = pd.DataFrame({"Date": dates, "Price": prices})

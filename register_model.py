@@ -2,7 +2,7 @@ from azureml.core import Workspace, Model
 
 ws = Workspace.from_config()
 
-model_blob_url = "https://<your-storage-account>.blob.core.windows.net/<container>/best_ml_model.pkl"
+model_blob_url = "https://<your-storage-account>.blob.core.windows.net/<container>/best_model.pkl"
 
 model = Model.register(
     workspace=ws,
