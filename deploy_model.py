@@ -9,7 +9,7 @@ myenv = Environment.from_conda_specification(
     file_path="conda_dependencies.yml"
 )
 
-model = Model(ws, name="flight_price_model")
+model = Model(ws, name="flight_prices_model")
 
 
 inference_config = InferenceConfig(

@@ -6,8 +6,8 @@ from azureml.monitoring import ModelDataCollector
 
 def init():
     global model, encoders, input_dc, output_dc
-    model_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), 'best_model.pkl')
-    encoders_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), 'encoders.pkl')
+    model_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), 'best_ml_model.pkl')
+    encoders_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), 'saved_encoders.pkl')
     model = joblib.load(model_path)
     encoders = joblib.load(encoders_path)
     input_dc = ModelDataCollector("flight_service", identifier="inputs")

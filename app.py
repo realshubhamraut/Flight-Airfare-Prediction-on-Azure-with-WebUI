@@ -8,8 +8,8 @@ import altair as alt
 import pydeck as pdk
 
 # Load model and encoders
-model = joblib.load("models/best_model.pkl")
-encoders = joblib.load("models/encoders.pkl")
+model = joblib.load("models/best_ml_model.pkl")
+encoders = joblib.load("models/saved_encoders.pkl")
 
 st.set_page_config(layout="wide")
 st.title("Flight Price Prediction 🛫")

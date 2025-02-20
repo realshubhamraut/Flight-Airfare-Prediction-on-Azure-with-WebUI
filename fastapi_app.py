@@ -7,8 +7,8 @@ from datetime import datetime
 app = FastAPI()
 
 # Load model and encoders (make sure these files match your training pipeline)
-model = joblib.load("models/best_model.pkl")
-encoders = joblib.load("models/encoders.pkl")
+model = joblib.load("models/best_ml_model.pkl")
+encoders = joblib.load("models/saved_encoders.pkl")
 
 class FlightData(BaseModel):
     Airline: str
