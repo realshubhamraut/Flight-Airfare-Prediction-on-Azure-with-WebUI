@@ -35,6 +35,8 @@
 
 [VIEW LIVE](https://flight-airfare-prediction-on-azure-with-webui.streamlit.app/)
 
+[Access API](https://flight-webapp.azurewebsites.net/docs)
+
 ## Technology Stack
 
 - **Frontend & Visualization:**  
