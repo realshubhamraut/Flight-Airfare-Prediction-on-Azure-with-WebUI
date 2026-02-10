@@ -26,7 +26,7 @@
     <img src="https://img.shields.io/badge/-Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
   </a>
   <a href="https://azure.microsoft.com/en-us/products/machine-learning">
-    <img src="https://img.shields.io/badge/-Azure%20ML-0078D4?style=flat-square&logo=microsoft-azure&logoColor=white" alt="Azure ML">
+    <img src="https://img.shields.io/badge/-Azure%20ML-0078D4?style=flat-square&logo=microsoft-azure&logoColor=white" alt="">
   </a>
   <a href="https://azure.microsoft.com/">
     <img src="https://img.shields.io/badge/-Azure%20Web%20Apps-0078D4?style=flat-square&logo=microsoft-azure&logoColor=white" alt="Azure Web Apps">
@@ -44,7 +44,7 @@
 
 ---
 
-A production-grade flight airfare prediction platform built with PySpark ETL pipelines for distributed data processing, ensemble machine learning models with hyperparameter tuning, and RESTful APIs using Flask and FastAPI. The entire solution is containerized with Docker and deployed on Azure using Container Registry, Azure ML, and Container Instances.
+A production-grade flight airfare prediction platform built with PySpark ETL pipelines for distributed data processing, ensemble machine learning models with hyperparameter tuning, and RESTful APIs using Flask and FastAPI. The entire solution is containerized with Docker and deployed on Azure using Container Registry, , and Container Instances.
 
 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0;">
   <a href="http://flight-ui-8339.eastus.azurecontainer.io:8501/">
@@ -128,7 +128,7 @@ A production-grade flight airfare prediction platform built with PySpark ETL pip
 |                                                                         |
 |  +-------------------------------------------------------------------+  |
 |  |                    Azure Deployment                               |  |
-|  |  Docker -> ACR -> Azure Web Apps/ACI -> Azure ML                  |  |
+|  |  Docker -> ACR -> Azure Web Apps/ACI ->                   |  |
 |  |           (Production Monitoring via ModelDataCollector)          |  |
 |  +-------------------------------------------------------------------+  |
 +-------------------------------------------------------------------------+
@@ -146,8 +146,8 @@ A production-grade flight airfare prediction platform built with PySpark ETL pip
 | REST APIs | Flask, FastAPI, Pydantic |
 | Frontend | Streamlit, Altair, PyDeck, Folium |
 | Containerization | Docker |
-| Cloud Deployment | Azure ML, Azure Container Registry, Azure Web Apps, Azure Container Instances |
-| Monitoring | ModelDataCollector (Azure ML) |
+| Cloud Deployment | , Azure Container Registry, Azure Web Apps, Azure Container Instances |
+| Monitoring | ModelDataCollector () |
 
 ---
 
@@ -185,7 +185,7 @@ A production-grade flight airfare prediction platform built with PySpark ETL pip
 - Containerization: Docker images for consistent deployment
 - Registry: Azure Container Registry for image management
 - Hosting: Azure Web Apps and Azure Container Instances
-- Model Management: Azure ML for model lifecycle orchestration
+- Model Management:  for model lifecycle orchestration
 - Monitoring: ModelDataCollector for production inference tracking
 
 ---
@@ -215,9 +215,9 @@ Flight-Airfare-Prediction-on-Azure-with-WebUI/
 ├── app.py                         # Streamlit frontend application
 ├── flask_app.py                   # Flask REST API
 ├── fastapi_app.py                 # FastAPI REST API
-├── inference.py                   # Azure ML inference script
-├── deploy_model.py                # Azure ML deployment configuration
-├── register_model.py              # Azure ML model registration
+├── inference.py                   #  inference script
+├── deploy_model.py                #  deployment configuration
+├── register_model.py              #  model registration
 ├── EDA-model-building.ipynb       # Jupyter notebook for EDA and model training
 ├── Dockerfile.api                 # API Docker configuration
 ├── Dockerfile.streamlit           # Streamlit Docker configuration
@@ -354,7 +354,7 @@ Performance varies based on hyperparameter tuning results.
 
 ### Configuration
 
-#### Azure ML Configuration
+####  Configuration
 Place your `config.json` in the project root:
 ```json
 {
