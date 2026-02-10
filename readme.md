@@ -48,7 +48,7 @@ A production-grade flight airfare prediction platform built with PySpark ETL pip
 
 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0;">
   <a href="http://flight-ui-8339.eastus.azurecontainer.io:8501/">
-    <img src="https://img.shields.io/badge/View_Live-Streamlit_UI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo">
+    <img src="https://img.shields.io/badge/View_Live-WEB--UI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo">
   </a>
   <a href="http://flight-api-8256.eastus.azurecontainer.io:8000/docs">
     <img src="https://img.shields.io/badge/View_Live-Swagger_Docs-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="API Documentation">
@@ -63,7 +63,7 @@ A production-grade flight airfare prediction platform built with PySpark ETL pip
 
 | Service | URL | Description |
 |:--------|:----|:------------|
-| Streamlit UI | [flight-ui-8339.eastus.azurecontainer.io:8501](http://flight-ui-8339.eastus.azurecontainer.io:8501/) | Interactive web interface for flight price predictions with calendar view and 3D route maps |
+|  WEB-UI | [flight-ui-8339.eastus.azurecontainer.io:8501](http://flight-ui-8339.eastus.azurecontainer.io:8501/) | Interactive web interface for flight price predictions with calendar view and 3D route maps |
 | FastAPI Swagger | [flight-api-8256.eastus.azurecontainer.io:8000/docs](http://flight-api-8256.eastus.azurecontainer.io:8000/docs) | Interactive API documentation with request/response schemas and test endpoints |
 | FastAPI Root | [flight-api-8256.eastus.azurecontainer.io:8000](http://flight-api-8256.eastus.azurecontainer.io:8000/) | REST API root endpoint with health check and service info `(ALSO YOU CAN USE THIS API endpoint IN YOUR APPS)`|
 
