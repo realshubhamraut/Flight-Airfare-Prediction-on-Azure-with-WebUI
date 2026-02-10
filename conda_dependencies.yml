@@ -4,9 +4,20 @@ dependencies:
   - pip:
     - numpy
     - pandas
+    - pyspark>=3.4.0
     - scikit-learn
     - joblib
+    - matplotlib
+    - seaborn
+    - flask
+    - flask-cors
     - fastapi
     - uvicorn
+    - pydantic
+    - streamlit
     - streamlit-folium
+    - altair
+    - pydeck
+    - folium
     - python-multipart
+    - requests

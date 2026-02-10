@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv
+.venv
+env
+*.egg-info
+
+# Jupyter
+.ipynb_checkpoints
+notebooks/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docs
+docs/
+*.md
+!readme.md
+
+# Data (raw data not needed in container - only models)
+data/
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Azure config (sensitive)
+config.json
+
+# ETL pipeline (not needed for inference)
+etl/
+
+# Logs
+*.log
+logs/
+
+# Test files
+test_*.py
+*_test.py
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/

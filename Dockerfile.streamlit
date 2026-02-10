@@ -1,0 +1,43 @@
+# =============================================================================
+# Flight Airfare Prediction - Streamlit Docker Image
+# =============================================================================
+# Optimized for Azure Web App deployment
+# Streamlit frontend with interactive UI
+
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Copy and install requirements
+COPY requirements-streamlit.txt ./
+RUN pip install --no-cache-dir -r requirements-streamlit.txt
+
+# Copy application code
+COPY app.py ./
+COPY models/ ./models/
+COPY .streamlit/ ./.streamlit/
+
+# Set ownership
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Health check for Azure
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+# Azure Web App expects port from WEBSITES_PORT or PORT env var
+ENV PORT=8501
+EXPOSE 8501
+
+# Run Streamlit with Azure-compatible settings
+CMD streamlit run app.py --server.port=${PORT} --server.address=0.0.0.0 --server.headless=true

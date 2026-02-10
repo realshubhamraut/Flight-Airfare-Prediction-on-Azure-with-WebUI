@@ -1,0 +1,27 @@
+{
+  "pipeline_run_id": "20260210101237",
+  "timestamp": "2026-02-10T10:12:49.521641",
+  "layers": {
+    "bronze": {
+      "records": 10683,
+      "columns": 16,
+      "file": "flights_bronze_20260210101237.parquet"
+    },
+    "silver": {
+      "records": 10683,
+      "columns": 32,
+      "valid_records": 10682,
+      "file": "flights_silver_20260210101237.parquet"
+    },
+    "gold": {
+      "records": 10682,
+      "features": 21,
+      "file": "flights_gold_20260210101237.parquet"
+    }
+  },
+  "model_metrics": {
+    "rmse": 1511.36,
+    "mae": 968.47,
+    "r2": 0.8504
+  }
+}

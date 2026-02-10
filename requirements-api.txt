@@ -1,0 +1,16 @@
+# API Dependencies for FastAPI/Flask Backend
+numpy
+pandas
+scikit-learn
+joblib
+
+# Web Frameworks
+fastapi
+uvicorn[standard]
+flask
+flask-cors
+pydantic
+
+# Utilities
+python-multipart
+requests

@@ -1,0 +1,42 @@
+# =============================================================================
+# Flight Airfare Prediction - API Docker Image
+# =============================================================================
+# Optimized for Azure Web App deployment
+# FastAPI backend with prediction endpoints
+
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Copy and install requirements
+COPY requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+# Copy application code
+COPY fastapi_app.py flask_app.py inference.py ./
+COPY models/ ./models/
+
+# Set ownership
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Health check for Azure
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
+
+# Azure Web App expects port from WEBSITES_PORT env var, default 8000
+ENV PORT=8000
+EXPOSE 8000
+
+# Run FastAPI - use PORT env var for Azure compatibility
+CMD uvicorn fastapi_app:app --host 0.0.0.0 --port ${PORT}

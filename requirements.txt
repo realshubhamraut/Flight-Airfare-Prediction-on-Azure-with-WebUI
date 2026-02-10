@@ -1,13 +1,36 @@
+# Core Data Processing
 numpy
 pandas
+pyspark>=3.4.0
+
+# Visualization
 matplotlib
-scikit-learn
 seaborn
+plotly
+
+# Machine Learning
+scikit-learn
 joblib
+statsmodels
+
+# Web Frameworks (REST APIs)
+flask
+flask-cors
 fastapi
 uvicorn
+pydantic
+
+# Streamlit Frontend
+streamlit
 streamlit-folium
+altair
+pydeck
+folium
+
+# Utilities
 python-multipart
+requests
+
+# Azure ML Integration
 azureml-core
 azureml-contrib-services
-statsmodels

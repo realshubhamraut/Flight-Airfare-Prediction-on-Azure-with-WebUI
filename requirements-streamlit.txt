@@ -1,0 +1,15 @@
+# Streamlit Frontend Dependencies
+numpy
+pandas
+scikit-learn
+joblib
+
+# Streamlit and visualization
+streamlit
+streamlit-folium
+altair
+pydeck
+folium
+
+# Utilities
+requests

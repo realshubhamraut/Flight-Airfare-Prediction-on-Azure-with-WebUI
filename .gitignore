@@ -1,4 +1,47 @@
+# Virtual environments
 venv
+.venv
+env
+
+# Python cache
 __pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Azure configuration (sensitive)
 config.json
+
+# OS files
 .DS_store
+.DS_Store
+Thumbs.db
+
+# PySpark
+*.parquet
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Model artifacts (large files - add to git LFS if needed)
+# models/*.pkl
+
+# Logs
+*.log
+logs/
+
+# Distribution
+dist/
+build/
+*.egg-info/

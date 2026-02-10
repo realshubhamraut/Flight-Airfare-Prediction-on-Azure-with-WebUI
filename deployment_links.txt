@@ -1,0 +1,6 @@
+http://flight-api-8256.eastus.azurecontainer.io:8000/
+http://flight-api-8256.eastus.azurecontainer.io:8000/docs#/
+http://flight-ui-8339.eastus.azurecontainer.io:8501/
+
+
+
