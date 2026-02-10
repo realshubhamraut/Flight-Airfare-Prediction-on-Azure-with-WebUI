@@ -2,10 +2,22 @@ import streamlit as st
 import joblib
 import pandas as pd
 from datetime import datetime
+import time
 import folium
 from streamlit_folium import st_folium
 import altair as alt
 import pydeck as pdk
+
+# Production Monitoring
+try:
+    from monitoring.data_collector import (
+        ModelDataCollector, 
+        DataDriftDetector,
+        get_metrics
+    )
+    MONITORING_ENABLED = True
+except ImportError:
+    MONITORING_ENABLED = False
 
 st.set_page_config(
     page_title="Flight Price Prediction",
@@ -50,6 +62,23 @@ st.markdown("<p class='header-tagline'>Your Trusted Companion for Flight Fare Fo
 # Load model and encoders
 model = joblib.load("models/best_ml_model.pkl")
 encoders = joblib.load("models/saved_encoders.pkl")
+
+# Initialize Production Monitoring
+if MONITORING_ENABLED:
+    # Initialize collectors with session state for persistence
+    if 'input_collector' not in st.session_state:
+        st.session_state.input_collector = ModelDataCollector("flight_price", identifier="inputs")
+        st.session_state.output_collector = ModelDataCollector("flight_price", identifier="outputs")
+        st.session_state.drift_detector = DataDriftDetector()
+        
+        # Set baseline stats from training data
+        st.session_state.drift_detector.set_baseline("Duration_hour", mean=8.5, std=5.2, min_val=0, max_val=48)
+        st.session_state.drift_detector.set_baseline("Total_Stops", mean=1.0, std=0.8, min_val=0, max_val=4)
+        st.session_state.drift_detector.set_baseline("Arrival_hour", mean=12, std=6, min_val=0, max_val=23)
+    
+    input_collector = st.session_state.input_collector
+    output_collector = st.session_state.output_collector
+    drift_detector = st.session_state.drift_detector
 
 city_coords = {
     "Delhi": [28.7041, 77.1025],
@@ -136,6 +165,36 @@ def preprocess_inputs(date_day, month, airline_val, total_stops, arrival_time, d
     df_input = df_input[COLUMN_ORDER]
     return df_input
 
+
+def predict_with_monitoring(input_df, raw_input_info: dict = None):
+    """
+    Make prediction with production monitoring.
+    Tracks input features, prediction output, and latency.
+    """
+    start_time = time.time()
+    prediction = model.predict(input_df)[0]
+    latency_ms = (time.time() - start_time) * 1000
+    
+    if MONITORING_ENABLED:
+        # Collect input data
+        request_id = input_collector.collect(input_df)
+        
+        # Collect output with latency
+        output_collector._collector.collect_output(
+            output_data=float(prediction),
+            request_id=request_id,
+            latency_ms=latency_ms
+        )
+        
+        # Track features for drift detection
+        if raw_input_info:
+            drift_detector.add_observation("Duration_hour", raw_input_info.get("Duration_hour", 0))
+            drift_detector.add_observation("Total_Stops", raw_input_info.get("Total_Stops", 0))
+            drift_detector.add_observation("Arrival_hour", raw_input_info.get("Arrival_hour", 0))
+    
+    return prediction, latency_ms
+
+
 # --- Main Panel ---
 col1, col2 = st.columns(2)
 
@@ -144,6 +203,7 @@ with col1:
     
     if predict_click:
         results = []
+        total_latency = 0
         for airline_val in airlines:
             single_input = preprocess_inputs(
                 journey_date.day,
@@ -153,16 +213,28 @@ with col1:
                 DEFAULT_ARRIVAL_TIME,
                 DEFAULT_DURATION
             )
-            prediction = model.predict(single_input)[0]
+            dur_h, dur_m = parse_duration(DEFAULT_DURATION)
+            raw_info = {
+                "Duration_hour": dur_h,
+                "Total_Stops": DEFAULT_TOTAL_STOPS,
+                "Arrival_hour": DEFAULT_ARRIVAL_TIME.hour
+            }
+            prediction, latency = predict_with_monitoring(single_input, raw_info)
+            total_latency += latency
             results.append({
                 "Airline": airline_val,
-                "Predicted Price": f"₹{prediction:.2f}"
+                "Predicted Price": f"₹{prediction:.2f}",
+                "Latency (ms)": f"{latency:.1f}"
             })
+        
         st.write(pd.DataFrame(results))
+        if MONITORING_ENABLED:
+            st.caption(f"📊 Monitored | Total latency: {total_latency:.1f}ms")
     
     if start_date <= end_date:
         all_data = []
         dates = pd.date_range(start_date, end_date)
+        dur_h, dur_m = parse_duration(DEFAULT_DURATION)
         for airline_val in airlines:
             prices = []
             for d in dates:
@@ -172,7 +244,13 @@ with col1:
                     DEFAULT_ARRIVAL_TIME,
                     DEFAULT_DURATION
                 )
-                prices.append(model.predict(input_df)[0])
+                raw_info = {
+                    "Duration_hour": dur_h,
+                    "Total_Stops": DEFAULT_TOTAL_STOPS,
+                    "Arrival_hour": DEFAULT_ARRIVAL_TIME.hour
+                }
+                pred, _ = predict_with_monitoring(input_df, raw_info)
+                prices.append(pred)
             temp_df = pd.DataFrame({"Date": dates, "Price": prices})
             temp_df["Airline"] = airline_val
             all_data.append(temp_df)
@@ -229,3 +307,121 @@ with col2:
         st.pydeck_chart(deck)
     else:
         st.warning("No coordinate mapping is available for the selected cities.")
+
+# =============================================================================
+# PRODUCTION MONITORING DASHBOARD
+# =============================================================================
+if MONITORING_ENABLED:
+    st.markdown("---")
+    st.header("📊 Production Monitoring Dashboard")
+    
+    # Get metrics from collectors
+    input_metrics = input_collector.get_metrics()
+    output_metrics = output_collector.get_metrics()
+    
+    # Metrics Row
+    metric_cols = st.columns(4)
+    
+    with metric_cols[0]:
+        st.metric(
+            label="Total Requests",
+            value=input_metrics.get("total_requests", 0)
+        )
+    
+    with metric_cols[1]:
+        avg_latency = output_metrics.get("avg_latency_ms", 0)
+        st.metric(
+            label="Avg Latency",
+            value=f"{avg_latency:.1f}ms" if avg_latency else "N/A"
+        )
+    
+    with metric_cols[2]:
+        error_rate = output_metrics.get("error_rate", 0)
+        st.metric(
+            label="Error Rate",
+            value=f"{error_rate:.2%}"
+        )
+    
+    with metric_cols[3]:
+        uptime = input_metrics.get("uptime_seconds", 0)
+        uptime_mins = uptime / 60
+        st.metric(
+            label="Session Uptime",
+            value=f"{uptime_mins:.1f} min"
+        )
+    
+    # Latency Distribution and Drift Detection
+    monitor_col1, monitor_col2 = st.columns(2)
+    
+    with monitor_col1:
+        st.subheader("⏱️ Latency Stats")
+        if output_metrics.get("avg_latency_ms"):
+            latency_data = {
+                "Metric": ["Min", "Avg", "P50", "P95", "Max"],
+                "Latency (ms)": [
+                    output_metrics.get("min_latency_ms", 0),
+                    output_metrics.get("avg_latency_ms", 0),
+                    output_metrics.get("p50_latency_ms", 0) or output_metrics.get("avg_latency_ms", 0),
+                    output_metrics.get("p95_latency_ms", "N/A"),
+                    output_metrics.get("max_latency_ms", 0)
+                ]
+            }
+            st.dataframe(pd.DataFrame(latency_data), use_container_width=True)
+        else:
+            st.info("Make predictions to see latency statistics")
+    
+    with monitor_col2:
+        st.subheader("🔍 Data Drift Detection")
+        drift_features = ["Duration_hour", "Total_Stops", "Arrival_hour"]
+        drift_results = []
+        
+        for feature in drift_features:
+            drift_check = drift_detector.check_drift(feature)
+            if drift_check.get("status") == "insufficient_data":
+                status = "⏳ Need more data"
+            elif drift_check.get("is_drifted"):
+                status = "⚠️ DRIFT DETECTED"
+            else:
+                status = "✅ No drift"
+            
+            drift_results.append({
+                "Feature": feature,
+                "Status": status,
+                "Z-Score": f"{drift_check.get('z_score', 0):.2f}" if drift_check.get('z_score') else "N/A"
+            })
+        
+        st.dataframe(pd.DataFrame(drift_results), use_container_width=True)
+    
+    # Recent Predictions
+    with st.expander("📋 Recent Predictions (Last 10)"):
+        recent = output_collector._collector.get_recent_predictions(10)
+        if recent:
+            recent_df = pd.DataFrame([
+                {
+                    "Time": r.get("timestamp", "")[:19],
+                    "Prediction": f"₹{r.get('prediction', 0):.2f}",
+                    "Latency (ms)": f"{r.get('latency_ms', 0):.1f}"
+                }
+                for r in recent
+            ])
+            st.dataframe(recent_df, use_container_width=True)
+        else:
+            st.info("No predictions yet")
+    
+    # Export logs button
+    col_export1, col_export2 = st.columns(2)
+    with col_export1:
+        if st.button("📥 Export Monitoring Logs"):
+            try:
+                input_file = input_collector.flush()
+                output_file = output_collector.flush()
+                st.success(f"Logs exported to:\n- {input_file}\n- {output_file}")
+            except Exception as e:
+                st.error(f"Export failed: {e}")
+    
+    with col_export2:
+        if st.button("🔄 Refresh Metrics"):
+            st.rerun()
+else:
+    st.markdown("---")
+    st.caption("ℹ️ Production monitoring not enabled. Install monitoring module for real-time metrics.")

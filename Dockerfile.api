@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir -r requirements-api.txt
 # Copy application code
 COPY fastapi_app.py flask_app.py inference.py ./
 COPY models/ ./models/
+COPY monitoring/ ./monitoring/
 
 # Set ownership
 RUN chown -R appuser:appuser /app

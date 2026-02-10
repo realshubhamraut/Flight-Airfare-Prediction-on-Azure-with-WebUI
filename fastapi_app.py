@@ -3,11 +3,41 @@ from pydantic import BaseModel
 import joblib
 import pandas as pd
 from datetime import datetime
+import time
+import logging
 
-app = FastAPI()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Import monitoring module
+try:
+    from monitoring.data_collector import ModelDataCollector, DataDriftDetector
+    MONITORING_ENABLED = True
+    logger.info("Monitoring module loaded successfully")
+except ImportError:
+    MONITORING_ENABLED = False
+    logger.warning("Monitoring module not available - running without monitoring")
+
+app = FastAPI(
+    title="Flight Price Prediction API",
+    description="Production ML API with monitoring capabilities",
+    version="2.0.0"
+)
 
 model = joblib.load("models/best_ml_model.pkl")
 encoders = joblib.load("models/saved_encoders.pkl")
+
+# Initialize monitoring
+if MONITORING_ENABLED:
+    input_collector = ModelDataCollector("flight_price", identifier="inputs")
+    output_collector = ModelDataCollector("flight_price", identifier="outputs")
+    drift_detector = DataDriftDetector()
+    
+    # Set baseline statistics for drift detection (from training data)
+    drift_detector.set_baseline("Duration_hour", mean=8.5, std=5.2, min_val=0, max_val=48)
+    drift_detector.set_baseline("Total_Stops", mean=1.0, std=0.8, min_val=0, max_val=4)
+    drift_detector.set_baseline("Arrival_hour", mean=12, std=6, min_val=0, max_val=23)
 
 class FlightData(BaseModel):
     Airline: str
@@ -22,10 +52,61 @@ class FlightData(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "Flight Price Prediction API is running"}
+    return {
+        "message": "Flight Price Prediction API is running",
+        "version": "2.0.0",
+        "monitoring_enabled": MONITORING_ENABLED
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for container orchestration."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "model_loaded": model is not None,
+        "encoders_loaded": encoders is not None
+    }
+
+
+@app.get("/metrics")
+async def get_metrics():
+    """Get monitoring metrics."""
+    if not MONITORING_ENABLED:
+        return {"error": "Monitoring not enabled"}
+    
+    input_metrics = input_collector.get_metrics()
+    output_metrics = output_collector.get_metrics()
+    
+    return {
+        "input_metrics": input_metrics,
+        "output_metrics": output_metrics,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/drift")
+async def check_drift():
+    """Check for data drift on monitored features."""
+    if not MONITORING_ENABLED:
+        return {"error": "Monitoring not enabled"}
+    
+    drift_results = {}
+    for feature in ["Duration_hour", "Total_Stops", "Arrival_hour"]:
+        drift_results[feature] = drift_detector.check_drift(feature)
+    
+    return {
+        "drift_analysis": drift_results,
+        "timestamp": datetime.now().isoformat()
+    }
+
 
 @app.post("/predict")
 async def predict(flight_data: FlightData):
+    start_time = time.time()
+    request_id = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
+    
     try:
         # Parse the journey date and times
         journey_date = datetime.strptime(flight_data.Date_of_Journey, "%Y-%m-%d")
@@ -74,12 +155,79 @@ async def predict(flight_data: FlightData):
                         detail=f"Error encoding {col}: {str(e)}"
                     )
         
-        print("Input DataFrame for prediction:\n", input_df)
+        logger.info(f"[{request_id}] Processing prediction request")
         
-        # Predict and return result
+        # Collect input data for monitoring
+        if MONITORING_ENABLED:
+            input_collector.collect(input_data, request_id)
+            # Track features for drift detection
+            drift_detector.add_observation("Duration_hour", duration_hour)
+            drift_detector.add_observation("Total_Stops", flight_data.Total_Stops)
+            drift_detector.add_observation("Arrival_hour", arrival_hour)
+        
+        # Predict
         prediction = model.predict(input_df)[0]
-        return {"predicted_price": round(prediction, 2)}
+        predicted_price = round(float(prediction), 2)
+        
+        # Calculate latency
+        latency_ms = (time.time() - start_time) * 1000
+        
+        # Collect output for monitoring
+        if MONITORING_ENABLED:
+            output_collector.collect_prediction(
+                input_data=input_data,
+                prediction=predicted_price,
+                latency_ms=latency_ms,
+                request_id=request_id
+            )
+        
+        logger.info(f"[{request_id}] Prediction: ₹{predicted_price} (latency: {latency_ms:.2f}ms)")
+        
+        return {
+            "predicted_price": predicted_price,
+            "request_id": request_id,
+            "latency_ms": round(latency_ms, 2)
+        }
     
     except Exception as e:
-        print("Error during prediction:", repr(e))
+        latency_ms = (time.time() - start_time) * 1000
+        logger.error(f"[{request_id}] Error during prediction: {repr(e)}")
+        
+        # Log error in monitoring
+        if MONITORING_ENABLED:
+            output_collector.collect_prediction(
+                input_data={},
+                prediction=None,
+                latency_ms=latency_ms,
+                request_id=request_id
+            )
+        
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/recent_predictions")
+async def get_recent_predictions(n: int = 10):
+    """Get recent predictions for debugging/monitoring."""
+    if not MONITORING_ENABLED:
+        return {"error": "Monitoring not enabled"}
+    
+    return {
+        "recent_predictions": output_collector._collector.get_recent_predictions(n),
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/flush_logs")
+async def flush_logs():
+    """Flush monitoring data to log files."""
+    if not MONITORING_ENABLED:
+        return {"error": "Monitoring not enabled"}
+    
+    input_file = input_collector.flush()
+    output_file = output_collector.flush()
+    
+    return {
+        "message": "Logs flushed successfully",
+        "input_log": input_file,
+        "output_log": output_file
+    }
