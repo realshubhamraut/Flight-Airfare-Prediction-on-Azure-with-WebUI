@@ -1,7 +1,7 @@
 
-## Deployment Status: ✅ Complete
+### Deployment Status: Complete
 
-### Deployed Resources
+#### Deployed Resources
 
 | Resource | Type | Location | Status |
 |----------|------|----------|--------|
@@ -12,19 +12,19 @@
 
 ---
 
-## Access URLs
+### Access URLs
 
-### API (FastAPI)
+#### API (FastAPI)
 - **URL**: http://flight-api-8256.eastus.azurecontainer.io:8000
 - **Swagger UI**: http://flight-api-8256.eastus.azurecontainer.io:8000/docs
 - **Health Check**: http://flight-api-8256.eastus.azurecontainer.io:8000/
 
-### Streamlit UI
+#### Streamlit UI
 - **URL**: http://flight-ui-8339.eastus.azurecontainer.io:8501
 
 ---
 
-## Resource Specifications
+### Resource Specifications
 
 | Container | CPU | Memory | Image |
 |-----------|-----|--------|-------|
@@ -33,7 +33,7 @@
 
 ---
 
-## Cost Estimation (Azure Free Account)
+### Cost Estimation (Azure Free Account)
 
 | Resource | Est. Monthly Cost |
 |----------|------------------|
@@ -44,14 +44,14 @@
 
 ---
 
-## Useful Commands
+### Useful Commands
 
-### Check Container Status
+#### Check Container Status
 ```bash
 az container list --resource-group flight-prediction-rg --output table
 ```
 
-### View Container Logs
+#### View Container Logs
 ```bash
 # API logs
 az container logs --resource-group flight-prediction-rg --name flight-api
@@ -60,27 +60,27 @@ az container logs --resource-group flight-prediction-rg --name flight-api
 az container logs --resource-group flight-prediction-rg --name flight-streamlit
 ```
 
-### Restart Containers
+#### Restart Containers
 ```bash
 az container restart --resource-group flight-prediction-rg --name flight-api
 az container restart --resource-group flight-prediction-rg --name flight-streamlit
 ```
 
-### Delete All Resources (to stop billing)
+#### Delete All Resources (to stop billing)
 ```bash
 az group delete --name flight-prediction-rg --yes --no-wait
 ```
 
 ---
 
-## Test the API
+### Test the API
 
-### Health Check
+#### Health Check
 ```bash
 curl http://flight-api-8256.eastus.azurecontainer.io:8000/
 ```
 
-### Predict Flight Price
+#### Predict Flight Price
 ```bash
 curl -X POST http://flight-api-8256.eastus.azurecontainer.io:8000/predict \
   -H "Content-Type: application/json" \
@@ -99,7 +99,7 @@ curl -X POST http://flight-api-8256.eastus.azurecontainer.io:8000/predict \
 
 ---
 
-## Files Created
+### Files Created
 
 | File | Purpose |
 |------|---------|
@@ -112,7 +112,7 @@ curl -X POST http://flight-api-8256.eastus.azurecontainer.io:8000/predict \
 
 ---
 
-## Redeployment
+### Redeployment
 
 To redeploy after making changes:
 

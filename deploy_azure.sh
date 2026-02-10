@@ -50,7 +50,7 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-echo -e "${GREEN}✓ Prerequisites check passed${NC}"
+echo -e "${GREEN}OK: Prerequisites check passed${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 2: Azure Login Check
@@ -63,7 +63,7 @@ if ! az account show &> /dev/null; then
 fi
 
 SUBSCRIPTION=$(az account show --query name -o tsv)
-echo -e "${GREEN}✓ Logged into Azure subscription: ${SUBSCRIPTION}${NC}"
+echo -e "${GREEN}OK: Logged into Azure subscription: ${SUBSCRIPTION}${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 3: Create Resource Group
@@ -75,7 +75,7 @@ az group create \
     --location $LOCATION \
     --output none
 
-echo -e "${GREEN}✓ Resource Group '$RESOURCE_GROUP' created in $LOCATION${NC}"
+echo -e "${GREEN}OK: Resource Group '$RESOURCE_GROUP' created in $LOCATION${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 4: Create Azure Container Registry
@@ -93,7 +93,7 @@ ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer -o tsv)
 ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
 ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
 
-echo -e "${GREEN}✓ ACR '$ACR_NAME' created${NC}"
+echo -e "${GREEN}OK: ACR '$ACR_NAME' created${NC}"
 echo -e "  Login Server: $ACR_LOGIN_SERVER"
 
 # -----------------------------------------------------------------------------
@@ -109,7 +109,7 @@ docker build -f Dockerfile.api -t flight-api:latest .
 echo "Building Streamlit image..."
 docker build -f Dockerfile.streamlit -t flight-streamlit:latest .
 
-echo -e "${GREEN}✓ Docker images built successfully${NC}"
+echo -e "${GREEN}OK: Docker images built successfully${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 6: Tag and Push Images to ACR
@@ -127,7 +127,7 @@ docker tag flight-streamlit:latest $ACR_LOGIN_SERVER/flight-streamlit:latest
 docker push $ACR_LOGIN_SERVER/flight-api:latest
 docker push $ACR_LOGIN_SERVER/flight-streamlit:latest
 
-echo -e "${GREEN}✓ Images pushed to ACR${NC}"
+echo -e "${GREEN}OK: Images pushed to ACR${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 7: Create App Service Plan
@@ -141,7 +141,7 @@ az appservice plan create \
     --sku $SKU \
     --output none
 
-echo -e "${GREEN}✓ App Service Plan created (SKU: $SKU)${NC}"
+echo -e "${GREEN}OK: App Service Plan created (SKU: $SKU)${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 8: Create and Deploy API Web App
@@ -173,7 +173,7 @@ az webapp config container set \
     --output none
 
 API_URL="https://${API_APP_NAME}.azurewebsites.net"
-echo -e "${GREEN}✓ API deployed at: $API_URL${NC}"
+echo -e "${GREEN}OK: API deployed at: $API_URL${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 9: Create and Deploy Streamlit Web App
@@ -205,7 +205,7 @@ az webapp config container set \
     --output none
 
 STREAMLIT_URL="https://${STREAMLIT_APP_NAME}.azurewebsites.net"
-echo -e "${GREEN}✓ Streamlit UI deployed at: $STREAMLIT_URL${NC}"
+echo -e "${GREEN}OK: Streamlit UI deployed at: $STREAMLIT_URL${NC}"
 
 # -----------------------------------------------------------------------------
 # Step 10: Enable Continuous Deployment (Optional)
@@ -224,7 +224,7 @@ az webapp deployment container config \
     --enable-cd true \
     --output none
 
-echo -e "${GREEN}✓ Continuous deployment enabled${NC}"
+echo -e "${GREEN}OK: Continuous deployment enabled${NC}"
 
 # -----------------------------------------------------------------------------
 # Deployment Summary
@@ -236,7 +236,7 @@ echo ""
 echo -e "Resource Group:    ${YELLOW}$RESOURCE_GROUP${NC}"
 echo -e "Container Registry: ${YELLOW}$ACR_NAME${NC}"
 echo ""
-echo -e "${GREEN}🚀 API Endpoint:${NC}"
+echo -e "${GREEN} API Endpoint:${NC}"
 echo -e "   $API_URL"
 echo -e "   $API_URL/docs (Swagger UI)"
 echo ""

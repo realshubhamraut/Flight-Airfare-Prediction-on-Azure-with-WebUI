@@ -21,7 +21,7 @@ except ImportError:
 
 st.set_page_config(
     page_title="Flight Price Prediction",
-    page_icon="✈️",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -56,7 +56,7 @@ custom_css = """
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
-st.title("Flight Price Prediction 🛫", anchor="header-title")
+st.title("Flight Price Prediction", anchor="header-title")
 st.markdown("<p class='header-tagline'>Your Trusted Companion for Flight Fare Forecasting</p>", unsafe_allow_html=True)
 
 # Load model and encoders
@@ -229,7 +229,7 @@ with col1:
         
         st.write(pd.DataFrame(results))
         if MONITORING_ENABLED:
-            st.caption(f"📊 Monitored | Total latency: {total_latency:.1f}ms")
+            st.caption(f"Monitored | Total latency: {total_latency:.1f}ms")
     
     if start_date <= end_date:
         all_data = []
@@ -313,7 +313,7 @@ with col2:
 # =============================================================================
 if MONITORING_ENABLED:
     st.markdown("---")
-    st.header("📊 Production Monitoring Dashboard")
+    st.header("Production Monitoring Dashboard")
     
     # Get metrics from collectors
     input_metrics = input_collector.get_metrics()
@@ -354,7 +354,7 @@ if MONITORING_ENABLED:
     monitor_col1, monitor_col2 = st.columns(2)
     
     with monitor_col1:
-        st.subheader("⏱️ Latency Stats")
+        st.subheader("Latency Stats")
         if output_metrics.get("avg_latency_ms"):
             latency_data = {
                 "Metric": ["Min", "Avg", "P50", "P95", "Max"],
@@ -371,18 +371,18 @@ if MONITORING_ENABLED:
             st.info("Make predictions to see latency statistics")
     
     with monitor_col2:
-        st.subheader("🔍 Data Drift Detection")
+        st.subheader("Data Drift Detection")
         drift_features = ["Duration_hour", "Total_Stops", "Arrival_hour"]
         drift_results = []
         
         for feature in drift_features:
             drift_check = drift_detector.check_drift(feature)
             if drift_check.get("status") == "insufficient_data":
-                status = "⏳ Need more data"
+                status = "Pending - Need more data"
             elif drift_check.get("is_drifted"):
-                status = "⚠️ DRIFT DETECTED"
+                status = "DRIFT DETECTED"
             else:
-                status = "✅ No drift"
+                status = "No drift"
             
             drift_results.append({
                 "Feature": feature,
@@ -393,7 +393,7 @@ if MONITORING_ENABLED:
         st.dataframe(pd.DataFrame(drift_results), use_container_width=True)
     
     # Recent Predictions
-    with st.expander("📋 Recent Predictions (Last 10)"):
+    with st.expander("Recent Predictions (Last 10)"):
         recent = output_collector._collector.get_recent_predictions(10)
         if recent:
             recent_df = pd.DataFrame([
@@ -411,7 +411,7 @@ if MONITORING_ENABLED:
     # Export logs button
     col_export1, col_export2 = st.columns(2)
     with col_export1:
-        if st.button("📥 Export Monitoring Logs"):
+        if st.button("Export Monitoring Logs"):
             try:
                 input_file = input_collector.flush()
                 output_file = output_collector.flush()
@@ -420,8 +420,8 @@ if MONITORING_ENABLED:
                 st.error(f"Export failed: {e}")
     
     with col_export2:
-        if st.button("🔄 Refresh Metrics"):
+        if st.button("Refresh Metrics"):
             st.rerun()
 else:
     st.markdown("---")
-    st.caption("ℹ️ Production monitoring not enabled. Install monitoring module for real-time metrics.")
+    st.caption("Production monitoring not enabled. Install monitoring module for real-time metrics.")
