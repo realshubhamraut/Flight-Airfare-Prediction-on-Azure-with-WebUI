@@ -281,7 +281,7 @@ with col2:
             "end_lat": [dst_coords[0]]
         })
         deck = pdk.Deck(
-            map_style="mapbox://styles/mapbox/light-v10",
+            map_style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
             initial_view_state=pdk.ViewState(
                 latitude=mid_lat,
                 longitude=mid_lon,
